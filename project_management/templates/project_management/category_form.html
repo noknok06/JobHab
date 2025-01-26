@@ -1,0 +1,24 @@
+{% extends 'project_management/base.html' %}
+
+{% block title %}Create New Category{% endblock %}
+
+{% block content %}
+<div class="container">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-secondary">Create New Category</h1>
+    </div>
+    <div class="card">
+        <div class="card-header bg-dark text-light">
+            <h3 class="mb-0">New Category</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary mt-3">Create</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

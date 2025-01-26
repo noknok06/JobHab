@@ -1,0 +1,408 @@
+{% extends 'base.html' %}
+{% load filters %}
+
+{% block title %}
+  Detail Post
+{% endblock %}
+
+{% block content %}
+{% load breadcrumb_tags %} 
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% get_breadcrumbs request as breadcrumbs %}
+            <li class="breadcrumb-item">
+                <a href="/">ホーム</a>
+            </li>
+            {% for crumb in breadcrumbs %}
+                {% if forloop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% else %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+  <div class="container mt-4">
+    <!-- タイトルと操作ボタン -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-primary">{{ post.title }}</h1>
+        <div>
+            <a href="{% url 'order:post_edit' post.pk %}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-pencil"></i> 編集
+            </a>
+            <a href="{% url 'order:post_delete' post.pk %}" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> 削除
+            </a>
+        </div>
+    </div>
+
+    <!-- 基本情報 -->
+    <!-- ステータスのフローチャート表示 -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-flowchart"></i> ステータス進行状況</h5>
+        <!-- ステータスを進めるボタン -->
+        <button id="advanceStatusBtn" class="btn btn-light btn-sm text-secondary"><i class="bi bi-arrow-right-circle"></i> ステータスを進める</button>
+      </div>
+      <div class="card-body">
+        <div class="status-flowchart d-flex justify-content-center align-items-center">
+          <div id="step-1" class="status-step {% if post.status == '新規' %}active{% endif %}">
+            <div class="circle">1</div>
+            <div class="label">新規</div>
+          </div>
+          <div class="arrow"></div>
+          <div id="step-2" class="status-step {% if post.status == '見積確認中' %}active{% endif %}">
+            <div class="circle">2</div>
+            <div class="label">見積確認中</div>
+          </div>
+          <div class="arrow"></div>
+          <div id="step-3" class="status-step {% if post.status == '発注済' %}active{% endif %}">
+            <div class="circle">3</div>
+            <div class="label">発注済</div>
+          </div>
+          <div class="arrow"></div>
+          <div id="step-4" class="status-step {% if post.status == '完了' %}active{% endif %}">
+            <div class="circle">4</div>
+            <div class="label">完了</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> 基本情報</h5>
+      </div>
+      <div class="card-body">
+        <p>
+          <strong>会社:</strong>
+          <a href="{% url 'order:company_detail' post.company.pk %}" class="text-decoration-none text-primary fw-bold">{{ post.company.name }}</a>
+        </p>
+        <p>
+          <strong>プロジェクト:</strong>
+          <a href="{% url 'order:project_detail' post.project.pk %}" class="text-decoration-none text-primary fw-bold">{{ post.project.name }}</a>
+        </p>
+        <p>
+          <strong>稟議:</strong>
+          <a href="{% url 'order:approval_detail' post.pk %}" class="text-decoration-none text-primary fw-bold">{{ post.approval }}</a>
+        </p>
+        <p>
+          <strong>契約開始日:</strong> {{ post.contract_start_date|date:'Y-m-d' }}
+        </p>
+        <p>
+          <strong>契約終了日:</strong> {{ post.contract_end_date|date:'Y-m-d' }}
+        </p>
+        <p>
+          <strong>金額:</strong> <span class="text-success">{{ post.amount|floatformat:0 }} 円</span>
+        </p>
+        <p>
+          <strong>関連ポスト:</strong> {% if post.parent_post %}
+            <a href="{% url 'order:post_detail' post.parent_post.pk %}" class="text-decoration-none text-primary fw-bold">{{ post.parent_post.title }}</a>
+          {% else %}
+            なし
+          {% endif %}
+        </p>
+        <p>
+          <strong>備考:</strong> <br>
+          {{ post.remarks|default:'なし'|linebreaksbr }}
+        </p>
+      </div>
+    </div>
+
+    <!-- 添付ファイル -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="bi bi-paperclip"></i> 添付ファイル</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-flex flex-wrap gap-3">
+          <!-- 見積書 -->
+          <div class="card text-center shadow-sm" style="width: 12rem;">
+            <div class="card-body">
+              <h6 class="card-title">見積書</h6>
+              {% if post.estimate_file %}
+                <a href="{{ post.estimate_file.url }}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="bi bi-download"></i> ダウンロード</a>
+              {% else %}
+                <p class="text-muted">なし</p>
+              {% endif %}
+            </div>
+          </div>
+          <!-- 注文書 -->
+          <div class="card text-center shadow-sm" style="width: 12rem;">
+            <div class="card-body">
+              <h6 class="card-title">注文書</h6>
+              {% if post.order_file %}
+                <a href="{{ post.order_file.url }}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="bi bi-download"></i> ダウンロード</a>
+              {% else %}
+                <p class="text-muted">なし</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-primary text-white">
+        <h2 class="h5 mb-0">コメント</h2>
+      </div>
+      <div class="card-body">
+        <!-- コメント入力フォーム -->
+        <div class="mb-3">
+          <textarea id="commentText" class="form-control" rows="3" placeholder="コメントを入力してください"></textarea>
+          <button id="addCommentBtn" class="btn btn-primary mt-2">コメントを追加</button>
+        </div>
+        <!-- コメントリスト -->
+        <ul id="commentList" class="list-group">
+          {% for comment in post.comments.all %}
+            <li class="list-group-item d-flex justify-content-between align-items-center" data-id="{{ comment.id }}">
+              <div>
+                <strong>
+                  {% if comment.user %}
+                    {{ comment.user.username }}
+                  {% else %}
+                    匿名
+                  {% endif %}
+                </strong>
+                <span class="text-muted">（{{ comment.created_at|date:'Y-m-d H:i' }}）</span>
+                <p class="mb-0">{{ comment.comment_text }}</p>
+              </div>
+              {% if comment.user == request.user %}
+                <button class="btn btn-danger btn-sm delete-comment">削除</button>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <!-- 請求履歴と請求処理ボタン -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">請求履歴</h2>
+      </div>
+      <div class="card-body">
+        <!-- 請求処理フォーム -->
+        <form method="post" enctype="multipart/form-data" action="{% url 'order:create_billing_record' post.pk %}" class="mb-4">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="remarks" class="form-label">備考</label>
+            <textarea class="form-control" id="remarks" name="remarks" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="invoice_file" class="form-label">添付ファイル</label>
+            <input type="file" class="form-control" id="invoice_file" name="invoice_file" />
+          </div>
+          <button type="submit" class="btn btn-warning btn-sm"><i class="bi bi-cash"></i> 請求処理を実行</button>
+        </form>
+        {% if post.billings.exists %}
+          <div class="table-responsive">
+            <table class="table-custom">
+              <thead class="table-light">
+                <tr>
+                  <th>請求日</th>
+                  <th>チェック済み</th>
+                  <th>備考</th>
+                  <th>請求書ダウンロード</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for billing in post.billings.all %}
+                  <tr>
+                    <td>{{ billing.billing_date|date:'Y-m-j' }}</td>
+                    <td class="text-center">
+                      <i class="bi 
+                                    {% if billing.is_checked %}
+                          
+                          bi-check-circle-fill text-success
+
+
+                        {% else %}
+                          
+                          bi-x-circle-fill text-danger
+
+                        {% endif %}">
+
+                      </i>
+                    </td>
+                    <td>{{ billing.remarks }}</td>
+                    <td>
+                      {% if billing.invoice_file %}
+                        <a href="{{ billing.invoice_file.url }}" class="btn btn-sm btn-primary" download><i class="bi bi-download"></i></a>
+                      {% else %}
+                        <span class="text-muted">添付なし</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">請求履歴はありません。</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 戻るボタン -->
+    <div class="mt-4">
+        <a href="{% url 'order:post_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+  </div>
+  <script>
+    document.getElementById('addCommentBtn').addEventListener('click', function () {
+      const commentText = document.getElementById('commentText').value.trim()
+      if (!commentText) {
+        alert('コメントを入力してください。')
+        return
+      }
+    
+      const postId = '{{ post.id }}'
+      fetch(`/order/posts/${postId}/add_comment/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', // JSONを送信するために正しいヘッダーを設定
+          'X-CSRFToken': '{{ csrf_token }}' // CSRF トークンを送信
+        },
+        body: JSON.stringify({ comment_text: commentText }) // JSON形式で送信
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.error) {
+            alert(data.error)
+          } else {
+            const commentList = document.getElementById('commentList')
+            const newComment = document.createElement('li')
+            newComment.className = 'list-group-item d-flex justify-content-between align-items-center'
+            newComment.setAttribute('data-id', data.id)
+            newComment.innerHTML = ` 
+                            <div>
+                                <strong>${data.user}</strong>
+                                <span class="text-muted">（${data.created_at}）</span>
+                                <p class="mb-0">${data.comment_text}</p>
+                            </div>
+                            <button class="btn btn-danger btn-sm delete-comment">削除</button>
+                        `
+            commentList.prepend(newComment)
+            document.getElementById('commentText').value = ''
+          }
+        })
+        .catch((error) => console.error('Error:', error))
+    })
+    
+    document.getElementById('commentList').addEventListener('click', function (event) {
+      if (event.target.classList.contains('delete-comment')) {
+        const commentItem = event.target.closest('li')
+        const commentId = commentItem.getAttribute('data-id')
+    
+        fetch(`/order/comments/${commentId}/delete/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          }
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              commentItem.remove()
+            } else {
+            }
+          })
+          .catch((error) => console.error('Error:', error))
+      }
+    })
+  </script>
+  <script>
+    document.getElementById('commentList').addEventListener('click', function (event) {
+        if (event.target.classList.contains('delete-comment')) {
+            const commentItem = event.target.closest('li');
+            const commentId = commentItem.getAttribute('data-id');
+
+            fetch(`/order/comments/${commentId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        commentItem.remove();
+                    } else {
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    });
+</script>
+<script>
+  document.getElementById('advanceStatusBtn').addEventListener('click', function () {
+      const postId = '{{ post.id }}';
+      const currentStatus = '{{ post.status }}';
+  
+      // ステータス遷移マップ
+      const statusMap = {
+          '新規': { next: '見積確認中', step: 2 },
+          '見積確認中': { next: '発注済', step: 3 },
+          '発注済': { next: '完了', step: 4 },
+      };
+  
+      const nextStatus = statusMap[currentStatus] ? statusMap[currentStatus].next : null;
+  
+      if (!nextStatus) {
+          alert('これ以上ステータスを進められません。');
+          return;
+      }
+  
+      fetch(`/order/posts/${postId}/advance_status/`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({ new_status: nextStatus })
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              // UIのステータス表示を更新
+              updateStatusUI(data.new_status, statusMap[currentStatus].step);
+          } else {
+              alert('ステータスの更新に失敗しました。');
+          }
+      })
+      .catch(error => console.error('Error:', error));
+  });
+  
+  // ステータスUIを動的に更新
+  function updateStatusUI(newStatus, currentStep) {
+      // すべてのステップからアクティブクラスを削除
+      document.querySelectorAll('.status-step').forEach(step => {
+          step.classList.remove('active');
+      });
+  
+      // 次のステップをアクティブにする
+      const nextStep = document.getElementById(`step-${currentStep}`);
+      if (nextStep) {
+          nextStep.classList.add('active');
+      }
+  
+      // ステータスバッジも更新
+      const badge = document.querySelector('.badge');
+      badge.textContent = newStatus;
+  
+      // クラスをリセットして新しいクラスを適用
+      badge.className = 'badge shadow-sm bg-info';
+      if (newStatus === '見積確認中') badge.classList.add('bg-warning');
+      else if (newStatus === '発注済') badge.classList.add('bg-primary');
+      else if (newStatus === '完了') badge.classList.add('bg-success');
+  }
+</script>
+    
+{% endblock %}

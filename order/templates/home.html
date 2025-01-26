@@ -1,0 +1,508 @@
+<!-- home.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}HOME{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <!-- カレンダー下の統計情報セクション -->
+    <div class="row mt-2 mb-4">
+        <!-- 左側のカード -->
+        <div class="col-md-6">
+            <div class="row">
+                <!-- 発注前ポスト -->
+                <div class="col-md-6 mb-3">
+                    <div class="card text-white shadow-sm" style="background-color: #a9d6e5;">
+                        <div class="card-body text-center">
+                            <i class="bi bi-lightning-charge display-4"></i>
+                            <h5 class="card-title mt-2">発注前ポスト</h5>
+                            <p class="card-text fs-3">{{ new_or_reviewing_posts|length }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 未請求のポスト -->
+                <div class="col-md-6 mb-3">
+                    <div class="card text-white shadow-sm" style="background-color: #ef9a9a;">
+                        <div class="card-body text-center">
+                            <i class="bi bi-exclamation-circle-fill display-4"></i>
+                            <h5 class="card-title mt-2">未請求のポスト</h5>
+                            <p class="card-text fs-3">{{ unbilled_completed_posts|length }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 今月の計上予定 -->
+                <div class="col-md-6 mb-3">
+                    <div class="card text-white shadow-sm" style="background-color: #80cbc4;">
+                        <div class="card-body text-center">
+                            <i class="bi bi-calendar-check-fill display-4"></i>
+                            <h5 class="card-title mt-2">今月の計上予定</h5>
+                            <p class="card-text fs-3">{{ this_month_posts|length }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 最近のポスト -->
+                <div class="col-md-6 mb-3">
+                    <div class="card text-white shadow-sm" style="background-color: #ffd54f;">
+                        <div class="card-body text-center">
+                            <i class="bi bi-clock-history display-4"></i>
+                            <h5 class="card-title mt-2">先月の請求</h5>
+                            <p class="card-text fs-3">{{ last_month_posts|length }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側のコンテンツ -->
+        <div class="col-md-6">
+            <div>
+                <canvas id="statusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <h2 class="mt-4">近日中の契約終了予定</h2>
+    <div class="row border p-3 mb-4 rounded">
+        {% for post in recent_due_dates %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ post.title }}</h5>
+                    <p class="card-text">
+                        <i class="bi bi-calendar-date"></i> 契約終了日: {{ post.contract_end_date }}
+                    </p>
+                    <a href="{% url 'order:post_detail' post.id %}" class="btn btn-secondary">詳細を見る</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-md-12">
+            <div class="alert alert-info">近日中の契約終了予定はありません。</div>
+        </div>
+        {% endfor %}
+    </div>
+    <h2 class="mt-4">直近で必要な稟議</h2>
+    <div class="row border p-3 mb-4 rounded">
+        {% if approval_warnings %}
+        {% for warning in approval_warnings %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ warning.name }}</h5>
+                    <p class="card-text">
+                        <i class="bi bi-calendar-date"></i> 終了日: {{ warning.end_date|date:"Y年m月d日" }}
+                    </p>
+                    <p class="card-text">
+                        <i class="bi bi-building"></i> 会社名: {{ warning.company__name }}
+                    </p>
+                    <a href="{% url 'order:approval_detail' warning.id %}" class="btn btn-secondary">詳細を見る</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="col-md-12">
+            <div class="alert alert-info">終了が近い稟議書はありません。</div>
+        </div>
+        {% endif %}
+    </div>
+    {% comment %} <div id="calendar" style="max-width: 100%; margin: 0 auto;"></div> {% endcomment %}
+
+    <!-- セクション: 最近のポスト -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center toggle-card">
+            <h2 class="h5 mb-0">
+                <i class="bi bi-clock-history"></i> 最近のポスト
+            </h2>
+            <a href="{% url 'order:post_add' %}" class="btn btn-light btn-sm">
+                <i class="bi bi-plus-circle"></i> 新規ポスト作成
+            </a>
+        </div>
+        <div class="card-body d-none">
+            {% if recent_posts %}
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>タイトル</th>
+                            <th>会社</th>
+                            <th>プロジェクト</th>
+                            <th class="text-center">ステータス</th>
+                            <th>計上予定日</th>
+                            <th>金額</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in recent_posts %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'order:post_detail' post.pk %}"
+                                    class="text-decoration-none text-primary fw-bold">
+                                    {{ post.title }}
+                                </a>
+                            </td>
+                            <td>{{ post.company.name }}</td>
+                            <td>{{ post.project.name }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if post.status == '新規' %}bg-secondary
+                                    {% elif post.status == '見積確認中' %}bg-warning text-dark
+                                    {% elif post.status == '発注済' %}bg-info
+                                    {% elif post.status == '完了' %}bg-success
+                                    {% elif post.status == '却下' %}bg-danger
+                                    {% endif %}">
+                                    {{ post.status }}
+                                </span>
+                            </td>
+                            <td>{{ post.expected_booking_date|date:"Y-m-j" }}</td>
+                            <td>{{ post.amount|floatformat:0 }} 円</td>
+                            <td>
+                                <a href="{% url 'order:post_detail' post.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+            </div>
+            <div class="alert alert-secondary text-center" role="alert">
+                最近のポストはありません。
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 新規または見積確認中のポスト -->
+    <div class="card shadow-sm">
+        <div class="card-header text-white d-flex justify-content-between align-items-center toggle-card" style="background-color: #a9d6e5;">
+            <h2 class="h5 mb-0">
+                <i class="bi bi-lightning-charge"></i> 発注前ポスト
+            </h2>
+            <span class="badge bg-light text-dark">{{ new_or_reviewing_posts|length }}</span>
+        </div>
+        <div class="card-body d-none">
+            {% if new_or_reviewing_posts %}
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>タイトル</th>
+                            <th>会社</th>
+                            <th>プロジェクト</th>
+                            <th>ステータス</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in new_or_reviewing_posts %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'order:post_detail' post.pk %}"
+                                    class="text-decoration-none text-primary fw-bold">
+                                    {{ post.title }}
+                                </a>
+                            </td>
+                            <td>{{ post.company.name }}</td>
+                            <td>{{ post.project.name }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if post.status == '新規' %}bg-secondary
+                                    {% elif post.status == '見積確認中' %}bg-warning text-dark
+                                    {% elif post.status == '発注済' %}bg-info
+                                    {% elif post.status == '完了' %}bg-success
+                                    {% elif post.status == '却下' %}bg-danger
+                                    {% endif %}">
+                                    {{ post.status }}
+                                </span>
+
+                            </td>
+                            <td>
+                                <a href="{% url 'order:post_detail' post.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-secondary text-center">
+                該当するポストはありません。
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header text-white d-flex justify-content-between align-items-center toggle-card"
+            style="background-color: #ef9a9a;">
+            <h2 class="h5 mb-0">
+                <i class="bi bi-exclamation-circle-fill"></i> 未請求のポスト
+            </h2>
+            <span class="badge bg-light text-dark">{{ unbilled_completed_posts|length }}</span>
+        </div>
+        <div class="card-body d-none">
+            {% if unbilled_completed_posts %}
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>タイトル</th>
+                        <th>会社</th>
+                        <th>プロジェクト</th>
+                        <th>金額</th>
+                        <th>請求状況</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in unbilled_completed_posts %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'order:post_detail' post.pk %}"
+                                class="text-decoration-none text-primary fw-bold">
+                                {{ post.title }}
+                            </a>
+                        </td>
+                        <td>{{ post.company.name }}</td>
+                        <td>{{ post.project.name }}</td>
+                        <td>{{ post.amount|floatformat:0 }} 円</td>
+                        <td>
+                            {% if post.is_billed_status %}
+                            <span class="badge bg-success">請求済</span>
+                            {% else %}
+                            <span class="badge bg-danger">未請求</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'order:post_detail' post.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-secondary text-center" role="alert">
+                完了かつ未請求のポストはありません。
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- セクション: 今月の計上予定 -->
+    <div class="card shadow-sm">
+        <div class="card-header text-white d-flex justify-content-between align-items-center toggle-card"
+            style="background-color: #80cbc4;">
+            <h2 class="h5 mb-0">
+                <i class="bi bi-calendar-check-fill"></i> 今月の計上予定
+            </h2>
+            <span class="badge bg-light text-dark">{{ this_month_posts|length }}</span>
+        </div>
+        <div class="card-body d-none">
+            {% if this_month_posts %}
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>タイトル</th>
+                            <th>会社</th>
+                            <th>プロジェクト</th>
+                            <th>計上予定日</th>
+                            <th>請求状況</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in this_month_posts %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'order:post_detail' post.pk %}"
+                                    class="text-decoration-none text-primary fw-bold">
+                                    {{ post.title }}
+                                </a>
+                            </td>
+                            <td>{{ post.company.name }}</td>
+                            <td>{{ post.project.name }}</td>
+                            <td>{{ post.expected_booking_date|date:"Y-m-j" }}</td>
+                            <td>
+                                {% if post.is_billed %}
+                                <span class="badge bg-success">請求済</span>
+                                {% else %}
+                                <span class="badge bg-danger">未請求</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'order:post_detail' post.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-secondary text-center" role="alert">
+                今月の計上予定はありません。
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- セクション: 先月の請求予定 -->
+    <div class="card shadow-sm">
+        <div class="card-header text-white d-flex justify-content-between align-items-center toggle-card"
+            style="background-color: #ffd54f;">
+            <h2 class="h5 mb-0">
+                <i class="bi bi-calendar-minus-fill"></i> 先月の請求予定
+            </h2>
+            <span class="badge bg-light text-dark">{{ last_month_posts|length }}</span>
+        </div>
+        <div class="card-body d-none">
+            {% if last_month_posts %}
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>タイトル</th>
+                            <th>会社</th>
+                            <th>プロジェクト</th>
+                            <th>計上予定日</th>
+                            <th>請求状況</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in last_month_posts %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'order:post_detail' post.pk %}"
+                                    class="text-decoration-none text-primary fw-bold">
+                                    {{ post.title }}
+                                </a>
+                            </td>
+                            <td>{{ post.company.name }}</td>
+                            <td>{{ post.project.name }}</td>
+                            <td>{{ post.expected_booking_date|date:"Y-m-j" }}</td>
+                            <td>
+                                {% if post.is_billed %}
+                                <span class="badge bg-success">請求済</span>
+                                {% else %}
+                                <span class="badge bg-danger">未請求</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'order:post_detail' post.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-secondary text-center" role="alert">
+                先月の請求予定はありません。
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'ja',
+            events: '/order/events/',
+            height: 'auto',
+            eventClick: function (info) {
+                if (info.event.url) {
+                    window.open(info.event.url, '_blank');
+                    info.jsEvent.preventDefault();
+                }
+            },
+        });
+        calendar.render();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggleHeaders = document.querySelectorAll('.toggle-card');
+
+        toggleHeaders.forEach(header => {
+            header.addEventListener('click', function () {
+                const cardBody = this.nextElementSibling;
+                if (cardBody) {
+                    cardBody.classList.toggle('d-none'); // 表示/非表示を切り替え
+                }
+            });
+        });
+    });
+</script>
+<!-- Chart.jsの読み込み -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Djangoから渡されたposts_summary_jsonをJavaScriptオブジェクトとして取得
+    const postsSummary = {{ posts_summary_json }};
+
+    // Chart.js用にラベルとデータを準備
+    const labels = Object.keys(postsSummary);
+    const dataCounts = Object.values(postsSummary);
+
+    // グラフを描画
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    const statusChart = new Chart(ctx, {
+        type: 'bar', // グラフのタイプを指定
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'ポスト件数',
+                data: dataCounts,
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.2)',  // 完了
+                    'rgba(255, 159, 64, 0.2)',   // 新規
+                    'rgba(153, 102, 255, 0.2)',  // 見積確認中
+                    // 必要に応じて追加
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',    // 完了
+                    'rgba(255, 159, 64, 1)',     // 新規
+                    'rgba(153, 102, 255, 1)',    // 見積確認中
+                    // 必要に応じて追加
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    precision: 0 // 整数で表示
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'ポストステータス別件数'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

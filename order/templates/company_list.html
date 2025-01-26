@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Company{% endblock %}
+
+{% block content %}
+{% load breadcrumb_tags %} 
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% get_breadcrumbs request as breadcrumbs %}
+            <li class="breadcrumb-item">
+                <a href="/">ホーム</a>
+            </li>
+            {% for crumb in breadcrumbs %}
+                {% if forloop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% else %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+<div class="container mt-4">
+    <!-- タイトルと追加ボタン -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-secondary">Company</h1>
+        <a href="{% url 'order:company_add' %}" class="btn btn-secondary">
+            <i class="bi bi-plus-circle"></i> Add
+        </a>
+    </div>
+    <h2 class="mt-4">会社一覧</h2>
+    <div class="row row-cols-1 row-cols-md-4 g-4">
+        {% if companies %}
+            {% for company in companies %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    {% if company.image %}
+                    <img src="{{ company.image.url }}" class="card-img-top object-fit-cover" alt="{{ company.name }}" style="height: 200px;">
+                    {% else %}
+                    <div class="card-img-top bg-secondary text-white text-center d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="bi bi-building fs-1"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title fw-bold text-secondary">{{ company.name }}</h5>
+                        <p class="card-text text-muted mb-3">
+                            {{ company.info|truncatechars:100 }}
+                        </p>
+                        <p class="mt-auto">
+                            <span class="badge 
+                                {% if company.status == '管理対象' %}bg-success
+                                {% elif company.status == '管理対象外' %}bg-secondary
+                                {% endif %}">
+                                {{ company.status }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="card-footer text-center" style="display: flex">
+                        <a href="{% url 'order:company_detail' company.pk %}" class="btn btn-outline-secondary w-50">詳細</a>
+                        <a href="{% url 'company:company_detail' company.pk %}" class="btn btn-outline-secondary w-50">問合せ   </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info text-center py-4">
+                <i class="bi bi-info-circle text-primary fs-4"></i>
+                <p class="mb-0">登録された会社はありません。</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ページネーション -->
+    <div class="mt-4 d-flex justify-content-center">
+        {% if companies.has_other_pages %}
+        <nav>
+            <ul class="pagination">
+                {% if companies.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ companies.previous_page_number }}" aria-label="前">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i></span></li>
+                {% endif %}
+
+                {% for num in companies.paginator.page_range %}
+                {% if companies.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+                {% endfor %}
+
+                {% if companies.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ companies.next_page_number }}" aria-label="次">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-right"></i></span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#company-table').DataTable({
+            responsive: true,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.5/i18n/ja.json'
+            }
+        });
+    });
+</script>
+{% endblock %}

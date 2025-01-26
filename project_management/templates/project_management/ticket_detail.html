@@ -1,0 +1,313 @@
+{% extends 'project_management/base.html' %}
+{% load markdown_extras %}
+{% load crispy_forms_tags %}
+
+{% block title %}Ticket Detail{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h2 class="my-4"><a href="{% url 'project_management:ticket_list' pk=ticket.project.id %}" class="btn btn-primary"><i class="fa-regular fa-circle-left"></i></a> Ticket Details:
+                <a type="button" onclick="window.history.back();">
+                    {{ ticket.title }}
+                </a> 
+            </h2>
+            <!-- Ticket Details -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>Title:</strong></div>
+                        <div class="col-md-9">{{ ticket.title }}</div>
+                    </div>
+                    <!-- Selected Companies -->
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>Companies:</strong></div>
+                        <div class="col-md-9">
+                            {% if ticket.companies.all %}
+                                <div>
+                                    {% for company in ticket.companies.all %}
+                                        <span class="badge bg-primary me-2">{{ company.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="badge bg-secondary"></span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>Description:</strong></div>
+                        <div class="col-md-9">{{ ticket.detail | linebreaksbr }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>Status:</strong></div>
+                        <div class="col-md-9">
+                            {{ ticket.get_status_id_display }}
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>Assignee:</strong></div>
+                        <div class="col-md-9">{{ ticket.assignee.name }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>Category:</strong></div>
+                        <div class="col-md-9">{{ ticket.category.name }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>Start Date:</strong></div>
+                        <div class="col-md-9">{{ ticket.start_date }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>End Date:</strong></div>
+                        <div class="col-md-9">{{ ticket.end_date }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>Deadline:</strong></div>
+                        <div class="col-md-9">{{ ticket.deadline }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>Project:</strong></div>
+                        <div class="col-md-9"><a href="{% url 'order:project_detail' ticket.project.id %}">{{ ticket.project.name }}</a></div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>Parent Project:</strong></div>
+                        <div class="col-md-9">
+                            {% if ticket.parent.id %}
+                            <a href="{% url 'project_management:ticket_detail' pk=ticket.parent.id %}">{{ ticket.parent }}</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <a href="{% url 'project_management:edit_ticket' pk=ticket.id %}" class="btn btn-primary">Edit Ticket</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form to Add New Task -->
+            <form method="post" class="mb-4">
+                
+                <h3 class="my-4">Task Checklist:</h3>
+
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-10">
+                        <!-- Make the description input field wider -->
+                        {{ task_form.task|as_crispy_field }}
+                    </div>
+                    <div class="col-md-2">
+                        <!-- Empty div to align the button properly -->
+                    <button type="submit" name="task_form" class="btn btn-primary" style="margin-top: 22px;"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+            </form>
+            <!-- Task List -->
+            {% if tasks %}
+                <ul class="list-group mb-4">
+                    {% for task in tasks %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="form-check d-flex align-items-center">
+                                <!-- タスク完了のチェックボックス -->
+                                <input 
+                                    class="form-check-input me-3" 
+                                    type="checkbox" 
+                                    value="1" 
+                                    id="task-{{ task.id }}" 
+                                    data-task-id="{{ task.id }}" 
+                                    {% if task.completed %}checked{% endif %} 
+                                    onchange="toggleTaskCompletion(this)">
+                                <label 
+                                    class="form-check-label {% if task.completed %}text-decoration-line-through{% endif %}" 
+                                    for="task-{{ task.id }}">
+                                    {{ task.task }}
+                                </label>
+                            </div>
+                            <!-- タスク削除ボタン -->
+                            <form method="post" class="mb-0">
+                                {% csrf_token %}
+                                <input type="hidden" name="task_id" value="{{ task.id }}">
+                                <button type="submit" name="delete_task" class="btn btn-danger btn-sm">削除</button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>タスクがありません。</p>
+            {% endif %}
+
+            <!-- Attachments Section -->
+            <h3 class="my-4">Attachments:</h3>
+            {% if ticket.attachments.all %}
+            <ul class="list-group mb-4">
+                {% for attachment in ticket.attachments.all %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="{{ attachment.attachment_file.url }}" target="_blank">{{ attachment.attachment_file.name }}</a>
+                    <form method="post" action="{% url 'project_management:delete_attachment' attachment.id ticket.id %}" onsubmit="return confirm('Are you sure you want to delete this attachment?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">×</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No attachments available.</p>
+            {% endif %}
+            
+            <!-- Remove Ticket Button -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <form method="post" action="{% url 'project_management:delete_ticket' pk=ticket.id %}" onsubmit="return confirm('Are you sure you want to delete this ticket?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete Ticket</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Favorites Section -->
+        <div class="col-md-4">
+            <h3 class="my-4">Favorites:</h3>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" name="is_favorite" value="{% if is_favorite %}false{% else %}true{% endif %}" class="btn btn-light">
+                    <span class="fs-3">
+                        {% if is_favorite %}
+                            &#9733;  <!-- Filled star -->
+                        {% else %}
+                            &#9734;  <!-- Empty star -->
+                        {% endif %}
+                    </span>
+                    {% if is_favorite %}
+                        Remove from Favorites
+                    {% else %}
+                        Add to Favorites
+                    {% endif %}
+                </button>
+            </form>
+            <!-- Add Comment Form -->
+            <h3 class="my-4">Add a Comment:</h3>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" name="comment_form" class="btn btn-primary mt-2">Add Comment</button>
+            </form>
+
+        </div>
+    </div>
+    <!-- Comments Section -->
+    <h3 class="my-4">Comments:</h3>
+    <div class="list-group mb-4">
+        {% for comment in ticket.ticketcomment_set.all %}
+        <div class="list-group-item">
+            <div class="row mb-2">
+                <div class="col-md-2"><strong>Comment:</strong></div>
+                <div class="col-md-8 comment_text">
+                    {{ comment.comment | markdown }}
+                </div>
+            </div>
+        
+            {% if comment.attachment_file %}
+            <div class="row mb-2">
+                <div class="col-md-3"><strong>Attachment:</strong></div>
+                <div class="col-md-9">
+                    {% if comment.attachment_file %}
+                        {% with comment.attachment_file.name|slice:"-4:" as ext %}
+                            {% if ext in '.jpg,.jpeg,.png' %}
+                                <a href="{{ comment.attachment_file.url }}" data-lightbox="comment-attachments" data-title="{{ comment.attachment_file.name }}">
+                                    <img src="{{ comment.attachment_file.url }}" alt="{{ comment.attachment_file.name }}" class="img-thumbnail" style="max-width: 200px; cursor: pointer;">
+                                </a>
+                            {% else %}
+                                <a href="{{ comment.attachment_file.url }}" target="_blank">{{ comment.attachment_file.name }}</a>
+                            {% endif %}
+                        {% endwith %}
+                    {% else %}
+                        <p>No attachment</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            <div class="row mb-2">
+                <div class="col-md-2"><strong>Posted by:</strong></div>
+                <div class="col-md-8">{{ comment.user.name }} on {{ comment.create_date }}</div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="list-group-item">No comments available.</div>
+        {% endfor %}
+    </div>
+</div>
+<script>
+    document.querySelector('textarea').addEventListener('paste', function (e) {
+        const clipboardItems = e.clipboardData.items;
+        for (let i = 0; i < clipboardItems.length; i++) {
+            const item = clipboardItems[i];
+            if (item.type.indexOf('image') !== -1) {
+                const file = item.getAsFile();
+                uploadImage(file);
+            }
+        }
+    });
+
+    function uploadImage(file) {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        fetch("{% url 'project_management:upload_image' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                insertImageUrlInTextarea(data.url);
+            } else {
+                alert('Image upload failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    function insertImageUrlInTextarea(url) {
+        const textarea = document.querySelector('textarea');
+        const cursorPos = textarea.selectionStart;
+        const textBefore = textarea.value.substring(0, cursorPos);
+        const textAfter = textarea.value.substring(cursorPos);
+        textarea.value = textBefore + `\n![image](${url})\n` + textAfter;
+    }
+
+    function toggleTaskCompletion(checkbox) {
+        const taskId = checkbox.getAttribute('data-task-id');
+        const isCompleted = checkbox.checked;
+
+        // Fetch APIで非同期リクエストを送信
+        fetch("{% url 'project_management:toggle_task_completion' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                'task_id': taskId,
+                'completed': isCompleted
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Task updated successfully.');
+            } else {
+                console.error('Task update failed.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+</script>
+{% endblock %}

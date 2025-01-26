@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Detail Approval{% endblock %}
+
+{% block content %}
+{% load breadcrumb_tags %} 
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% get_breadcrumbs request as breadcrumbs %}
+            <li class="breadcrumb-item">
+                <a href="/">ホーム</a>
+            </li>
+            {% for crumb in breadcrumbs %}
+                {% if forloop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% else %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+<div class="container mt-4">
+    <!-- タイトルと戻るボタン -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-secondary">{{ approval.name }}</h1>
+        <a href="{% url 'order:approval_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 戻る
+        </a>
+    </div>
+
+    <!-- 稟議書情報 -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-4 text-muted">会社名</dt>
+                <dd class="col-sm-8">
+                    {% for company in approval.companies.all %}
+                        {{ company.name }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        なし
+                    {% endfor %}
+                </dd>
+                
+
+                <dt class="col-sm-4 text-muted">稟議書名</dt>
+                <dd class="col-sm-8">{{ approval.name }}</dd>
+
+                <dt class="col-sm-4 text-muted">起案日</dt>
+                <dd class="col-sm-8">{{ approval.draft_date|date:"Y年m月d日" }}</dd>
+                
+                <dt class="col-sm-4 text-muted">開始日</dt>
+                <dd class="col-sm-8">{{ approval.start_date|date:"Y年m月d日" }}</dd>
+                
+                <dt class="col-sm-4 text-muted">終了日</dt>
+                <dd class="col-sm-8">{{ approval.end_date|date:"Y年m月d日" }}</dd>
+                
+                <dt class="col-sm-4 text-muted">稟議書ファイル</dt>
+                <dd class="col-sm-8">
+                    {% if approval.attached_file %}
+                    <a href="{{ approval.attached_file.url }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-file-earmark-arrow-down"></i> ダウンロード
+                    </a>
+                    {% else %}
+                    <span class="text-muted">ファイルがありません</span>
+                    {% endif %}
+                </dd>
+            </dl>
+        </div>
+    </div>
+    <!-- 関連プロジェクト -->
+    <section class="mb-5 mt-4">
+        <h2 class="mb-4">関連プロジェクト</h2>
+        {% if related_projects %}
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>プロジェクト名</th>
+                        <th>ステータス</th>
+                        <th>開始日</th>
+                        <th>終了日</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in related_projects %}
+                    <tr>
+                        <td><a href="{% url 'order:project_detail' project.pk %}" class="text-decoration-none">{{ project.name }}</a></td>
+                        <td>
+                            <span class="badge 
+                                {% if project.status == '進行中' %}bg-info
+                                {% elif project.status == '完了' %}bg-success
+                                {% elif project.status == '中止' %}bg-danger
+                                {% else %}bg-secondary
+                                {% endif %}">
+                                {{ project.status }}
+                            </span>
+                        </td>
+                        <td>{{ project.start_date|date:"Y-m-d" }}</td>
+                        <td>{{ project.end_date|date:"Y-m-d" }}</td>
+                        <td>
+                            <a href="{% url 'order:project_edit' project.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil-square"></i> 編集
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">関連付けられたプロジェクトはありません。</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

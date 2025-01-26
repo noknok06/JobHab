@@ -1,0 +1,93 @@
+{% extends 'note/base.html' %}
+{% load split_tags %}
+
+{% block content %}
+<h1>{% if action == '作成' %}ノート作成{% else %}ノート編集{% endif %}</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.media }}
+
+    <div class="form-group">
+        {{ form.title }}
+    </div>
+
+    <div class="form-group mt-4">
+        {{ form.content }}
+        <!-- ここでリッチテキストエディタが表示されます -->
+    </div>
+
+    <label class="mb-1" for="id_tags">Genre</label>
+    <div class="form-group mt-4">
+        {{ form.genre }}
+        <!-- ここでリッチテキストエディタが表示されます -->
+    </div>
+
+    <div class="form-group mt-4" style="width:30%">
+        <label class="mb-1" for="id_tags">Tag</label>
+        <div class="input-group">
+            <input type="text" id="new_tag" class="form-control form-control-sm" placeholder="タグを入力">
+            <div class="input-group-append">
+                <button type="button" id="add_tag" class="btn btn-secondary btn-sm">＋</button>
+            </div>
+        </div>
+    </div>
+    <div class="form-group mb-4">
+        <div id="tags_list">
+            {% if form.tags.value %}
+                {% for tag in form.tags.value|split_tags %}
+                    <span class="badge badge-secondary text-secondary mr-2" data-tag="{{ tag }}">{{ tag }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <!-- hidden フィールドに初期タグの値を設定 -->
+        <input type="hidden" name="tags" id="tags_input" value="{% if form.tags.value %}{{ form.tags.value }}{% endif %}">
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        {% if action == '作成' %}保存{% else %}更新{% endif %}
+    </button>
+</form>
+
+<script>
+    // タグの初期化: ページロード時に hidden フィールドを初期化
+    document.addEventListener('DOMContentLoaded', function () {
+        updateTagsInput();
+    });
+
+    // タグの追加機能
+    document.getElementById('add_tag').addEventListener('click', function () {
+        const tagInput = document.getElementById('new_tag');
+        const tagName = tagInput.value.trim();
+        if (tagName) {
+            const tagList = document.getElementById('tags_list');
+            const newTag = document.createElement('span');
+            newTag.classList.add('badge', 'badge-secondary', 'text-secondary', 'mr-2');
+            newTag.textContent = tagName;
+
+            // クリックでタグを削除できるように
+            newTag.addEventListener('click', function () {
+                tagList.removeChild(newTag);
+                updateTagsInput(); // タグを削除後に hidden フィールドを更新
+            });
+
+            tagList.appendChild(newTag);
+
+            // 入力したタグをリセット
+            tagInput.value = '';
+
+            // hidden フィールドを更新
+            updateTagsInput();
+        }
+    });
+
+    // hidden フィールドにタグを更新する関数
+    function updateTagsInput() {
+        const tags = [];
+        document.querySelectorAll('#tags_list .badge').forEach(function (tag) {
+            tags.push(tag.textContent); // 追加されたタグを配列に格納
+        });
+        document.getElementById('tags_input').value = tags.join(','); // カンマ区切りで hidden フィールドにセット
+    }
+</script>
+{% endblock %}

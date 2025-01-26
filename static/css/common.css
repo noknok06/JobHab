@@ -1,0 +1,138 @@
+/* グローバルスタイル */
+h1 {
+    color: #7c7c7c;
+}
+
+/* リンク */
+.nav-link {
+    color: #919191;
+    transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    font-weight: bold;
+    color: #44484c;
+    background-color: #e2e2e2;
+}
+
+/* メインコンテンツ */
+.main-content {
+    padding: 20px;
+    margin-left: 0; /* デフォルトではサイドバー幅なし */
+}
+
+/* サイドバー */
+.sidebar {
+    height: 100vh;
+    background-color: #fff;
+    position: fixed;
+    top: 60;
+    left: 0; /* 初期は画面外 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out; /* スライドアニメーション */
+    z-index: 1050;
+}
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+}
+
+.sidebar.show {
+    transform: translateX(0); /* 表示位置 */
+  }
+
+.sidebar .nav-link {
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    border-radius: 5px;
+}
+
+.sidebar .nav-link i {
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+/* ヘッダー */
+header {
+    border-bottom: 3px #d9d9d9 solid;
+    background: linear-gradient(90deg, #ffffff, #f9f9f9);
+}
+
+header.navbar {
+    z-index: 1100;
+    position: sticky;
+    top: 0;
+}
+
+/* ナビヘッダー */
+.nav-header {
+    color: #7c7c7c;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    margin: 1rem 20px 0.5rem;
+    font-weight: bold;
+}
+
+/* ボタン */
+.btn-primary {
+    background-color: #1c7ed6;
+    border-color: #1c7ed6;
+}
+
+.btn-primary:hover {
+    background-color: #1864ab;
+    border-color: #1864ab;
+}
+
+/* ステータスフロー */
+.status-flowchart {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-step {
+    text-align: center;
+    color: #777;
+    transition: color 0.3s ease-in-out;
+}
+
+.status-step.active {
+    color: #007bff;
+    font-weight: bold;
+}
+
+.status-step .circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e2e2e2;
+    color: #777;
+    line-height: 40px;
+    margin: 0 auto;
+    font-size: 1.2rem;
+    transition: all 0.3s ease-in-out;
+}
+
+.status-step.active .circle {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.status-step .label {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.arrow {
+    width: 50px;
+    height: 2px;
+    background-color: #e2e2e2;
+}
+
+.status-step.active + .arrow {
+    background-color: #007bff;
+}

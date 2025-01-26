@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Detail Company{% endblock %}
+
+{% block content %}
+{% load breadcrumb_tags %} 
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% get_breadcrumbs request as breadcrumbs %}
+            <li class="breadcrumb-item">
+                <a href="/">ホーム</a>
+            </li>
+            {% for crumb in breadcrumbs %}
+                {% if forloop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% else %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+<div class="container mt-4">
+
+    <!-- タイトルと戻るボタン -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-secondary">{{ company.name }}</h1>
+        <a href="{% url 'order:company_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 戻る
+        </a>
+    </div>
+
+    <!-- 会社情報 -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-info-circle"></i> 会社情報</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3 text-muted">会社情報</dt>
+                <dd class="col-sm-9">{{ company.info|default:"-" }}</dd>
+
+                <dt class="col-sm-3 text-muted">備考</dt>
+                <dd class="col-sm-9">{{ company.remarks|default:"-" }}</dd>
+
+                <dt class="col-sm-3 text-muted">ステータス</dt>
+                <dd class="col-sm-9">
+                    <span class="badge 
+                        {% if company.status == '管理対象' %}bg-success
+                        {% elif company.status == '管理対象外' %}bg-secondary
+                        {% endif %}">
+                        {{ company.status }}
+                    </span>
+                </dd>
+
+                {% if company.master_contract %}
+                <dt class="col-sm-3 text-muted">基本契約書</dt>
+                <dd class="col-sm-9">
+                    <a href="{{ company.master_contract.url }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-file-earmark-arrow-down"></i> ダウンロード
+                    </a>
+                </dd>
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+<!-- 契約プロジェクト一覧 -->
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> 契約プロジェクト一覧</h5>
+    </div>
+    <div class="card-body">
+        {% if company.projects.all %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            {% for project in company.projects.all %}
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{% url 'order:project_detail' project.pk %}" class="text-decoration-none text-primary fw-bold">
+                                {{ project.name }}
+                            </a>
+                        </h5>
+                        <p class="card-text">
+                            ステータス: 
+                            <span class="badge 
+                                {% if project.status == '管理対象' %}bg-success
+                                {% elif project.status == '管理対象外' %}bg-secondary
+                                {% endif %}">
+                                {{ project.status }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted text-center mb-0">契約中のプロジェクトはありません。</p>
+        {% endif %}
+    </div>
+</div>
+
+
+    <a href="{% url 'order:company_delete' company.pk %}" class="btn btn-outline-danger btn-sm mt-4">
+        <i class="bi bi-trash"></i> 削除
+    </a>   
+</div>
+   
+{% endblock %}

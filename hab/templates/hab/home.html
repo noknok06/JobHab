@@ -1,0 +1,35 @@
+{% extends "hab/base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="button-container">
+        <button onclick="location.href='/order'" class="button-card">
+          <i class="fas fa-shopping-cart"></i>
+          <h3>Order Management</h3>
+        </button>
+        <button onclick="location.href='/project_management'" class="button-card">
+          <i class="fas fa-tasks"></i>
+          <h3>Project Management</h3>
+        </button>
+        <button onclick="location.href='/pdf_merger'" class="button-card">
+          <i class="fas fa-file-pdf"></i>
+          <h3>PDF Merger</h3>
+        </button>
+        <button onclick="location.href='/login_manager'" class="button-card">
+          <i class="fas fa-user"></i>
+          <h3>Login Manager</h3>
+        </button>
+        <button onclick="location.href='/logger'" class="button-card">
+          <i class="fas fa-history"></i>
+          <h3>Logger</h3>
+        </button>
+        <button onclick="location.href='/note'" class="button-card">
+          <i class="fa-regular fa-note-sticky"></i>
+          <h3>note</h3>
+        </button>
+      </div>
+      
+</div>
+{% endblock %}

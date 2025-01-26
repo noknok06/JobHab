@@ -1,0 +1,165 @@
+{% extends 'project_management/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="text-secondary">{{ project.name }} - Gantt Chart</h1>
+    </div>
+
+    <!-- ビュー切り替えボタン -->
+    <div class="view-buttons mb-2">
+        <button id="view-day" class="btn btn-secondary">Day</button>
+        <button id="view-week" class="btn btn-secondary">Week</button>
+        <button id="view-month" class="btn btn-secondary">Month</button>
+    </div>
+
+    <!-- ガントチャート用のSVG -->
+    <div class="gantt-wrap">
+        <svg id="gantt"></svg>
+    </div>
+
+    <!-- Frappe GanttのCSSとスクリプト -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.5.0/frappe-gantt.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.5.0/frappe-gantt.min.js"></script>
+    <script>
+        window.onload = function() {
+            try {
+                const chartData = JSON.parse('{{ chart_data|escapejs }}');
+                
+                const statusColors = {
+                    10: 'rgba(255, 99, 132, 0.6)',
+                    20: 'rgba(54, 162, 235, 0.6)',
+                    30: 'rgba(255, 206, 86, 0.6)',
+                    40: 'rgba(75, 192, 192, 0.6)',
+                    50: 'rgba(55, 55, 50, 0.6)'
+                };
+
+                const tasks = chartData.map(ticket => ({
+                    id: ticket.title,
+                    name: ticket.title,
+                    start: ticket.start,
+                    end: ticket.end,
+                    progress: ticket.category_name === 'Milestone' ? 0 : ticket.progress, // categoryがMilestoneならprogressを0に
+                    ticket_id: ticket.ticket_id,
+                    category: ticket.category_name,
+                    dependencies: ticket.parent,
+                    companies: ticket.companies,
+                    custom_class: ticket.category_name === 'マイルストーン' ? 'milestone' : `status-${ticket.status_id}`,
+                    milestone: ticket.category_name === 'マイルストーン' // マイルストーンとして扱う
+                }));
+
+                let gantt = new Gantt("#gantt", tasks, {
+                    view_mode: 'Day',
+                    date_format: 'YYYY-MM-DD',
+                    custom_popup_html: function(task) {
+                        return `
+                            <style>
+                                .popup-wrapper{
+                                    width:20%;
+                                }
+                                p{
+                                    margin:0
+                                }
+                            </style>
+                            <div class="details-container">
+                              <h5>${task.name}</h5>
+                              <p>Category: ${task.category}</p>
+                              <p>Start: ${task.start}</p>
+                              <p>End: ${task.end}</p>
+                              <p>companies: ${task.companies}</p>
+                            </div>
+                        `;
+                    },
+                    on_click: function(task) {
+                        const detailUrl = `/project_management/ticket/${task.ticket_id}/`;
+                        window.location.href = detailUrl;
+                    },
+                    on_date_change: function(task, start, end) {
+                        updateTaskInDatabase(task.id, start, end);
+                    },
+                    on_progress_change: function(task, progress) {
+                        updateTaskProgressInDatabase(task.id, progress);
+                    }
+                });
+
+                // ビュー切り替えボタンのイベントリスナーを追加
+                document.getElementById('view-day').addEventListener('click', function() {
+                    gantt.change_view_mode('Day');
+                });
+                document.getElementById('view-week').addEventListener('click', function() {
+                    gantt.change_view_mode('Week');
+                });
+                document.getElementById('view-month').addEventListener('click', function() {
+                    gantt.change_view_mode('Month');
+                });
+
+                // マイルストーンのCSSを追加
+                const style = document.createElement('style');
+                document.head.appendChild(style);
+                const sheet = style.sheet;
+                sheet.insertRule(`
+                    .gantt .milestone .bar {
+                        fill: red;
+                        stroke: black;
+                        stroke-width: 2px;
+                    }
+                `, sheet.cssRules.length);
+
+                Object.keys(statusColors).forEach(status_id => {
+                    sheet.insertRule(`
+                        .gantt .status-${status_id} .bar {
+                            fill: ${statusColors[status_id]} !important;
+                        }
+                    `, sheet.cssRules.length);
+                });
+                
+                function updateTaskInDatabase(taskId, startDate, endDate) {
+                    const startDateString = new Date(startDate).toISOString().split('T')[0];
+                    const endDateString = new Date(endDate).toISOString().split('T')[0];
+                    
+                    fetch('/project_management/update-task/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({
+                            id: taskId,
+                            start_date: startDateString,
+                            end_date: endDateString
+                        })
+                    })
+                    .then(response => response.json())
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while updating the task.');
+                    });
+                }
+
+                function updateTaskProgressInDatabase(taskId, progress) {
+                    fetch('/update-task-progress/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({
+                            id: taskId,
+                            progress: progress
+                        })
+                    })
+                    .then(response => response.json())
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                }
+
+                const csrfToken = '{{ csrf_token }}';
+            } catch (error) {
+                console.error("Error parsing chart data:", error);
+            }
+        };
+    </script>
+</div>
+
+{% endblock %}

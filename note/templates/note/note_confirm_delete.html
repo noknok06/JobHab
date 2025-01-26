@@ -1,0 +1,22 @@
+{% extends 'note/base.html' %}
+
+{% block title %}ノート削除確認{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1>ノート削除確認</h1>
+    <p>以下のノートを削除しますか？この操作は取り消せません。</p>
+    <ul class="list-group mb-3">
+        <li class="list-group-item">
+            <h5>{{ object.title }}</h5>
+            <p>カテゴリ: {{ object.category.name }}</p>
+            <p class="text-muted small">更新日: {{ object.updated_at|date:"Y年m月d日 H:i" }}</p>
+        </li>
+    </ul>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">削除</button>
+        <a href="{% url 'note:note_list' %}" class="btn btn-secondary">キャンセル</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Approvals{% endblock %}
+
+{% block content %}
+{% load breadcrumb_tags %} 
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% get_breadcrumbs request as breadcrumbs %}
+            <li class="breadcrumb-item">
+                <a href="/">ホーム</a>
+            </li>
+            {% for crumb in breadcrumbs %}
+                {% if forloop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% else %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+<div class="container mt-4">
+    <!-- タイトルと追加ボタン -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-secondary">Approvals</h1>
+        <a href="{% url 'order:approval_add' %}" class="btn btn-secondary">
+            <i class="bi bi-plus-circle"></i> Add
+        </a>
+    </div>
+
+    <!-- 稟議書一覧テーブル -->
+    <div class="table-responsive">
+        <table id="dataTable" class="table-custom">
+            <thead>
+                <tr>
+                    <th>稟議書名</th>
+                    <th>起案日</th>
+                    <th>開始日</th>
+                    <th>終了日</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for approval in approvals %}
+                <tr>
+                    <td>
+                        <a href="{% url 'order:approval_detail' approval.pk %}" class="text-decoration-none text-secondary fw-bold">
+                            {{ approval.name }}
+                        </a>
+                    </td>
+                    <td>{{ approval.draft_date|date:"Y年m月d日" }}</td>
+                    <td>{{ approval.start_date|date:"Y年m月d日" }}</td>
+                    <td>{{ approval.end_date|date:"Y年m月d日" }}</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'order:approval_edit' approval.pk %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-pencil"></i> 修正
+                            </a>
+                            <a href="{% url 'order:approval_delete' approval.pk %}" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-trash"></i> 削除
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted">登録された稟議書はありません。</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ページネーション -->
+    <div class="mt-4 d-flex justify-content-center">
+        {% if approvals.has_other_pages %}
+        <nav>
+            <ul class="pagination">
+                {% if approvals.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ approvals.previous_page_number }}" aria-label="前">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i></span></li>
+                {% endif %}
+
+                {% for num in approvals.paginator.page_range %}
+                {% if approvals.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+                {% endfor %}
+
+                {% if approvals.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ approvals.next_page_number }}" aria-label="次">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-right"></i></span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#approval-table').DataTable({
+            responsive: true,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.5/i18n/ja.json'
+            }
+        });
+    });
+</script>
+{% endblock %}

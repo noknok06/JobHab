@@ -1,0 +1,33 @@
+<div class="nav-header">App</div>
+<ul class="nav flex-column">
+    <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.app_name == 'order' %}active{% endif %}" href="{% url 'order:home' %}">
+            <i class="bi bi-calendar4-event"></i> Order Management
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.app_name == 'project_management' %}active{% endif %}" href="{% url 'project_management:home' %}">
+            <i class="bi bi-kanban"></i> Project Management
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.app_name == 'pdf_merger' %}active{% endif %}" href="{% url 'pdf_merger:multiple_file_upload' %}">
+            <i class="bi bi-intersect"></i> Pdf Merger
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.app_name == 'logger' %}active{% endif %}" href="{% url 'logger:action_log_list' %}">
+            <i class="bi bi-clock-history"></i> Logger
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.app_name == 'note' %}active{% endif %}" href="{% url 'note:note_list' %}">
+            <i class="bi bi-journal-richtext"></i> Note
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'admin:index' %}">
+            <i class="bi bi-tools"></i> Admin
+        </a>
+    </li>
+</ul>

@@ -1,0 +1,209 @@
+{% extends 'note/base.html' %}
+
+{% block content %}
+<style>
+    .NoteList_container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+        justify-content: space-between;
+    }
+
+    .NoteList_itemContainer {
+        width: 47%;
+        border: 1px solid var(--c-neutral-border);
+        border-radius: var(--rounded-md);
+        background: var(--c-bg-neutral);
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .NoteList_card {
+        display: flex;
+        align-items: flex-start;
+        padding: var(--spacing-sm);
+    }
+
+    .NoteList_emoji {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px;
+        height: 100px;
+        font-size: 2rem;
+        margin-right: var(--spacing-sm);
+        border-radius: var(--rounded-full);
+        background: var(--c-bg-primary-lighter);
+    }
+
+    .NoteList_content {
+        flex: 1;
+        padding: 10px;
+    }
+
+    .NoteList_title {
+        font-size: 16px;
+        font-weight: bold;
+        color: var(--c-text-body);
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .NoteList_meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: var(--spacing-xs);
+        font-size: 14px;
+        color: var(--c-text-low-priority);
+    }
+
+    .NoteList_like {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--c-general-like);
+    }
+</style>
+<!-- タイトルと検索アイコン -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">ノート一覧</h1>
+    <a href="#" class="btn rounded-circle search-icon" title="タグ検索">
+        <i class="bi bi-search"></i>
+    </a>
+</div>
+<div class="container-fluid mt-4" style="background-color: #f6fcff; padding: 20px; border-radius: 10px;">
+    <!-- タグフィルタ -->
+    <div id="tag-filter" class="tag-filter d-none mb-4">
+        <h3 class="tag-filter-title" style="color: #44484c;">タグ一覧</h3>
+        
+        <!-- タグ検索ボックス -->
+        <div class="mb-3">
+            <input type="text" id="tag-search" class="form-control" placeholder="タグを検索">
+        </div>
+    
+        <!-- タグリスト -->
+        <div class="tag-filter-content d-flex flex-wrap" id="tag-list">
+            {% for tag in tags %}
+            <a href="?tag={{ tag.name }}" class="btn btn-outline-primary me-2 mb-2 tag-item">
+                <i class="bi bi-tag"></i> {{ tag.name }} ({{ tag.note_count }})
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- 新規追加ボタン -->
+    <div class="mb-4">
+        <a href="{% url 'note:note_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> 新規ノート
+        </a>
+    </div>
+
+    <!-- 検索フォーム -->
+    <form method="GET" class="form-inline mb-4 d-flex">
+        {% csrf_token %}
+        <input type="text" name="query" class="form-control me-2" value="{{ request.GET.query }}" placeholder="検索キーワード">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i>
+        </button>
+    </form>
+    <div class="row">
+        <div class="col-md-9">
+            <div class="NoteList_container">
+                {% for note in notes %}
+                <div class="col-4 NoteList_itemContainer mb-3">
+                    <div class="col">
+                        <article class="NoteList_card">
+                            <a class="NoteList_emoji" href="{% url 'note:note_detail' note.id %}"
+                                style="background: #fff; color: #44484c;">
+                                <span class="Emoji_nativeEmoji"><i class="{{note.genre.image_path}}"></i> </span>
+                            </a>
+                            <div class="NoteList_content">
+                                <a class="NoteList_link" href="{% url 'note:note_detail' note.id %}">
+                                    <h2 class="NoteList_title text-dark">{{ note.title }}</h2>
+                                </a>
+                                <div class="NoteList_meta">
+                                    <div class="NoteList_userInfo">
+                                        <span class="NoteList_category">{{ note.category.name }}</span>
+                                        <time class="NoteList_date" datetime="{{ note.created_at|date:'c' }}">
+                                        作成日： {{ note.created_at|date:"Y年m月d日" }}
+                                        </time>
+                                    </div>
+                                </div>
+                                <p class="text-muted small mb-3">
+                                    <i class="bi bi-tags"></i>
+                                    {% for tag in note.tags.all %}
+                                    <span class="badge bg-dark-subtle">                                   
+                                         <a href="?tag={{ tag.name }}" class="text-dark">
+                                            {{ tag.name }}
+                                        </a>
+                                    </span>
+                                    {% endfor %}
+                                </p>
+
+                            </div>
+                        </article>
+                    </div>
+                </div>
+                {% empty %}
+                <p>現在、表示するノートはありません。</p>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm" style="border-radius: 10px;">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-trophy"></i> タグランキング</h4>
+                </div>
+                <div class="card-body">
+                    {% if tags %}
+                    <ul class="list-group list-group-flush">
+                        {% for tag in tags|slice:":5" %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-tag"></i> <a href="?tag={{ tag.name }}">{{ tag.name }}</a></span>
+                            <span class="badge bg-danger-subtle">{{ tag.note_count }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="text-muted">タグがまだありません。</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchIcon = document.querySelector('.search-icon');
+        const tagFilter = document.getElementById('tag-filter');
+
+        searchIcon.addEventListener('click', function (event) {
+            event.preventDefault();
+            tagFilter.classList.toggle('show');
+            tagFilter.classList.toggle('d-none');
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+    const tagSearchInput = document.getElementById('tag-search');
+    const tagItems = document.querySelectorAll('.tag-item');
+
+    tagSearchInput.addEventListener('input', function () {
+        const searchText = this.value.toLowerCase();
+
+        tagItems.forEach(item => {
+            const tagName = item.textContent.toLowerCase();
+            if (tagName.includes(searchText)) {
+                item.style.display = 'inline-block'; // 該当するタグを表示
+            } else {
+                item.style.display = 'none'; // 該当しないタグを非表示
+            }
+        });
+    });
+});
+
+</script>
+
+{% endblock %}

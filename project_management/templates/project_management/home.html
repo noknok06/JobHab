@@ -1,0 +1,112 @@
+{% extends 'project_management/base.html' %}
+{% load static %}
+
+{% block title %}Project Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Status Distribution (Chart) -->
+    <div class="row mb-6">
+        <div class="col-md-4">
+            <h2 class="mb-3 text-primary">Dashboard</h2>
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <canvas id="statusChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            <h2 class="mb-3 text-primary">Attention Tickets</h2>
+            <div class="card shadow-sm mb-4">
+                <ul class="list-group list-group-flush">
+                    {% for favorite in favorite_tickets %}
+                    <li class="list-group-item">
+                        <a href="{% url 'project_management:ticket_detail' pk=favorite.ticket.id %}" class="text-dark">{{ favorite.ticket.title }}</a> - Status: {{ favorite.ticket.get_status_id_display }}
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item">No favorite tickets.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div id="calendar"></div>
+        </div>
+        <!-- Upcoming Deadlines -->
+        <div class="col-md-12">
+            <div class="row">
+                <h2 class="mb-3 text-primary">Upcoming Deadlines</h2>
+                {% for ticket in upcoming_deadline_tickets %}
+                    {% if ticket.end_date|date:"Y-m-d" < today|date:"Y-m-d" and ticket.status_id != 50 %}
+                        <!-- 期限切れで完了していない -->
+                        <div class="col-md-3 mb-2">
+                            <div class="card shadow-sm border-danger">
+                                <div class="card-body">
+                                    <h5 class="card-title text-danger">{{ ticket.title }}</h5>
+                                    <p class="card-text">終了日: {{ ticket.end_date|date:"Y-m-d" }}</p>
+                                    <a href="{% url 'project_management:ticket_detail' pk=ticket.id %}" class="btn btn-outline-danger btn-sm mt-2">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% elif ticket.start_date|date:"Y-m-d" <= today|date:"Y-m-d" and ticket.status_id == 10 %}
+                        <!-- 開始日になっても未処理 -->
+                        <div class="col-md-3 mb-2">
+                            <div class="card shadow-sm border-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title text-warning">{{ ticket.title }}</h5>
+                                    <p class="card-text">開始日: {{ ticket.start_date|date:"Y-m-d" }}</p>
+                                    <a href="{% url 'project_management:ticket_detail' pk=ticket.id %}" class="btn btn-outline-warning btn-sm mt-2">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% elif ticket.start_date and ticket.start_date|date:"Y-m-d" <= today|date:"Y-m-d" and ticket.status_id != 50 %}
+                        <!-- 終了日3日前になっても完了していない -->
+                        <div class="col-md-3 mb-2">
+                            <div class="card shadow-sm border-info">
+                                <div class="card-body">
+                                    <h5 class="card-title text-info">{{ ticket.title }}</h5>
+                                    <p class="card-text">終了日: {{ ticket.end_date|date:"Y-m-d" }}</p>
+                                    <a href="{% url 'project_management:ticket_detail' pk=ticket.id %}" class="btn btn-outline-info btn-sm mt-2">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info" role="alert">
+                            No upcoming deadlines.
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    <!-- Overdue Tickets -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-light">
+                    <h2 class="text-light">Ticket Register</h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="weeklyPostChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="status-count-10" hidden>{{ status_counts.10 }}</div>
+<div id="status-count-20" hidden>{{ status_counts.20 }}</div>
+<div id="status-count-30" hidden>{{ status_counts.30 }}</div>
+<div id="status-count-40" hidden>{{ status_counts.40 }}</div>
+
+<script id="weekly-post-chart-data" type="application/json">
+    {{ graph_data_json|safe }}
+</script>
+
+<!-- 必要なスクリプトを読み込み -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/status_chart.js' %}"></script>
+<script src="{% static 'js/weekly_ticket_chart.js' %}"></script>
+<script src="{% static 'js/calender_chart.js' %}"></script>
+
+<!-- カレンダー初期化スクリプト -->
+{% endblock %}

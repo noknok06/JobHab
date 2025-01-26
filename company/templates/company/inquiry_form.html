@@ -1,0 +1,42 @@
+{% extends 'company/base.html' %}
+
+{% block title %}
+{% if object %}問い合わせの編集{% else %}新しい問い合わせの作成{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">{% if object %}問い合わせの編集{% else %}新しい問い合わせの作成{% endif %}</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="category" class="form-label">分類</label>
+            <input type="text" name="category" id="category" class="form-control" value="{{ form.category.value }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="question" class="form-label">質問内容</label>
+            <textarea name="question" id="question" class="form-control" rows="3" required>{{ form.question.value }}</textarea>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="question_date" class="form-label">質問日</label>
+                <input type="date" name="question_date" id="question_date" class="form-control" value="{{ form.question_date.value|date:"Y-m-d" }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="answer_date" class="form-label">回答日</label>
+                <input type="date" name="answer_date" id="answer_date" class="form-control" value="{{ form.answer_date.value|date:"Y-m-d" }}">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="answer" class="form-label">回答内容</label>
+            <textarea name="answer" id="answer" class="form-control" rows="3">{{ form.answer.value }}</textarea>
+        </div>
+        <div class="d-flex">
+            <button type="submit" class="btn btn-primary me-2">保存</button>
+            <form method="get" action="{% url 'company:company_detail' inquiry.id %}" style="display:inline;">
+                <button type="submit" class="btn btn-secondary">キャンセル</button>
+            </form>
+        </div>
+    </form>
+</div>
+{% endblock %}

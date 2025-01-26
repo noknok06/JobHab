@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}Detail Project{% endblock %}
+
+{% block content %}
+
+{% load breadcrumb_tags %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% get_breadcrumbs request as breadcrumbs %}
+            <li class="breadcrumb-item">
+                <a href="/">ホーム</a>
+            </li>
+            {% for crumb in breadcrumbs %}
+            {% if forloop.last %}
+            <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+            {% else %}
+            <li class="breadcrumb-item">
+                <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+<div class="container mt-5">
+    <!-- タイトルと新規登録ボタン -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-secondary">{{ project.name }}</h1>
+        <a href="{% url 'order:project_edit' project.pk %}" class="btn btn-secondary">
+            <i class="bi bi-plus-circle"></i> Edit
+        </a>
+    </div>
+
+    <!-- 備考 -->
+    {% comment %} <section class="mb-5">
+        <h2 class="mb-4">備考</h2>
+        {% if project.remarks %}
+        <p class="text-muted">{{ project.remarks }}</p>
+        {% else %}
+        <p class="text-muted">備考はありません。</p>
+        {% endif %}
+    </section> {% endcomment %}
+
+    <!-- 関連ポスト -->
+    <section class="mb-5 mt-4">
+        <h2 class="mb-4">関連Post
+            <a href="{% url 'order:post_add' %}" class="btn">
+               <i class="bi bi-plus-circle"></i> 新規ポスト作成
+            </a>
+        </h2>
+        {% if project.post_set.all %}
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>選択</th>
+                        <th>タイトル</th>
+                        <th>会社</th>
+                        <th>ステータス</th>
+                        <th>契約開始日</th>
+                        <th>契約終了日</th>
+                        <th>金額</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in project.post_set.all %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="post-checkbox" data-amount="{{ post.amount|floatformat:0 }}" checked>
+                        </td>
+                        <td><a href="{% url 'order:post_detail' post.pk %}" class="text-decoration-none">{{ post.title }}</a></td>
+                        <td>{{ post.company.name }}</td>
+                        <td>{{ post.status }}</td>
+                        <td>{{ post.contract_start_date|date:"Y-m-d" }}</td>
+                        <td>{{ post.contract_end_date|date:"Y-m-d" }}</td>
+                        <td>{{ post.amount|floatformat:0 }} 円</td>
+                        <td>
+                            <a href="{% url 'order:post_edit' post.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil-square"></i> 編集
+                            </a>
+                            <a href="{% url 'order:post_delete' post.pk %}" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i> 削除
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-end mt-3">
+            <h5 class="text-success fw-bold">
+                合計金額: <span id="total-amount">{{ total_amount|floatformat:0 }}</span> 円
+            </h5>
+        </div>
+        {% else %}
+        <p class="text-muted">関連するポストはありません。</p>
+        {% endif %}
+    </section>
+    <!-- 関連稟議書 -->
+    <section class="mb-5">
+        <h2 class="mb-4">関連稟議書</h2>
+        {% if project.approvals.all %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for approval in project.approvals.all %}
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{% url 'order:approval_detail' approval.pk %}"
+                                class="text-decoration-none text-secondary">
+                                {{ approval.name }}
+                            </a>
+                        </h5>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">関連する稟議書はありません。</p>
+        {% endif %}
+    </section>
+
+    <!-- タスク -->
+    <section class="mb-5">
+        <h2 class="mb-4">Tasks</h2>
+        <div class="table-responsive">
+            <table class="table-custom align-middle">
+                <thead>
+                    <tr>
+                        <th>タイトル</th>
+                        <th>担当者</th>
+                        <th>ステータス</th>
+                        <th>開始日</th>
+                        <th>終了日</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in project.ticket_set.all %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'project_management:ticket_detail' ticket.pk %}"
+                                class="text-decoration-none">
+                                {{ ticket.title }}
+                            </a>
+                        </td>
+                        <td>{{ ticket.assignee }}</td>
+                        <td>
+                            <span class="badge 
+                                    {% if ticket.status_id == 10 %}bg-secondary
+                                    {% elif ticket.status_id == 20 %}bg-warning
+                                    {% elif ticket.status_id == 30 %}bg-info
+                                    {% elif ticket.status_id == 40 %}bg-primary
+                                    {% elif ticket.status_id == 50 %}bg-success
+                                    {% endif %}">
+                                {{ ticket.get_status_id_display }}
+                            </span>
+                        </td>
+                        <td>{{ ticket.start_date|date:"Y-m-d" }}</td>
+                        <td>{{ ticket.end_date|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-muted">チケットが見つかりません。</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <!-- 戻るボタン -->
+    <div class="text-start">
+        <a href="{% url 'order:project_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 戻る
+        </a>
+    </div>
+</div>
+<script>
+    // チェックボックスの状態に基づいて合計金額を更新
+    document.addEventListener("DOMContentLoaded", function () {
+        const checkboxes = document.querySelectorAll(".post-checkbox");
+        const totalAmountElement = document.getElementById("total-amount");
+
+        function updateTotalAmount() {
+            let total = 0;
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    total += parseFloat(checkbox.getAttribute("data-amount")) || 0;
+                }
+            });
+            totalAmountElement.textContent = total.toLocaleString(); // 千位区切り
+        }
+
+        // 初期合計値を設定
+        updateTotalAmount();
+
+        // チェックボックスの変更イベントで合計値を再計算
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener("change", updateTotalAmount);
+        });
+    });
+</script>
+{% endblock %}

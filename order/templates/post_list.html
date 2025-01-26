@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Posts{% endblock %}
+
+{% block content %}
+{% load breadcrumb_tags %} 
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% get_breadcrumbs request as breadcrumbs %}
+            <li class="breadcrumb-item">
+                <a href="/">ホーム</a>
+            </li>
+            {% for crumb in breadcrumbs %}
+                {% if forloop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% else %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+<div class="container mt-4">
+
+    <!-- タイトルと新規作成ボタン -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-secondary">Posts</h1>
+        <a href="{% url 'order:post_add' %}" class="btn btn-secondary">
+            <i class="bi bi-plus-circle"></i> Add
+        </a>
+    </div>
+
+    <!-- フィルタセクション -->
+    <form method="get" class="mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-funnel"></i> Filter</h5>
+            </div>
+            <div class="card-body">
+                <div class="row gy-3">
+                    <!-- ステータスフィルタ -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold"><i class="bi bi-flag"></i> ステータス</label>
+                        <div class="form-check">
+                            {% for option in status_options %}
+                            <div>
+                                <input type="checkbox" name="status" value="{{ option }}" id="status-{{ option }}" class="form-check-input"
+                                    {% if option in selected_statuses %}checked{% endif %}>
+                                <label for="status-{{ option }}" class="form-check-label">{{ option }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- 請求状況フィルタ -->
+                    <div class="col-md-4">
+                        <label for="is_billed" class="form-label fw-bold"><i class="bi bi-receipt"></i> 請求状況</label>
+                        <select name="is_billed" id="is_billed" class="form-select shadow-sm">
+                            <option value="">すべて</option>
+                            {% for key, value in is_billed_options.items %}
+                            <option value="{{ key }}" {% if request.GET.is_billed == key %}selected{% endif %}>
+                                {{ value }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- フィルタリングボタン -->
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- DataTables対応テーブル -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-table"></i> Posts table</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="dataTable" class="table-custom table-hover align-middle" style="width:100%">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th>タイトル</th>
+                            <th>会社</th>
+                            <th>プロジェクト</th>
+                            <th>注文日</th>
+                            <th>ステータス</th>
+                            <th>請求状況</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in posts %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'order:post_detail' post.pk %}" class="text-decoration-none text-primary fw-bold">
+                                    {{ post.title }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{% url 'order:company_detail' post.company.pk %}" class="text-decoration-none text-primary fw-bold">{{ post.company.name }}</a>
+                            </td>
+                            <td>
+                                <a href="{% url 'order:project_detail' post.project.pk %}" class="text-decoration-none text-primary fw-bold">
+                                    {{ post.project.name }}
+                                </a>
+                            </td>
+                            <td>{{ post.order_date|date:"Y-m-d" }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if post.status == '新規' %}bg-secondary
+                                    {% elif post.status == '見積確認中' %}bg-warning
+                                    {% elif post.status == '発注済' %}bg-info
+                                    {% elif post.status == '完了' %}bg-success
+                                    {% elif post.status == '却下' %}bg-danger
+                                    {% endif %} shadow-sm">
+                                    {{ post.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if post.is_billed %}
+                                <span class="badge bg-success shadow-sm">請求済</span>
+                                {% else %}
+                                <span class="badge bg-danger shadow-sm">未請求</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <a href="{% url 'order:post_edit' post.pk %}" class="btn btn-outline-primary btn-sm shadow-sm">
+                                        <i class="bi bi-pencil"></i> 修正
+                                    </a>
+                                    <a href="{% url 'order:post_delete' post.pk %}" class="btn btn-outline-danger btn-sm shadow-sm">
+                                        <i class="bi bi-trash"></i> 削除
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

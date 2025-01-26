@@ -1,0 +1,67 @@
+{% extends 'pdf_merger/base.html' %}
+
+{% load filters %}
+
+{% block title %}
+PDF Merger
+{% endblock %}
+
+{% block content %}
+{% if form.errors %}
+    <ul class="alert alert-danger">
+        {% for error in form.errors.files %}
+            <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-secondary">PDF Merger</h1>
+    </div>
+    <div class="upload-container">
+        <form id="upload-form" method="post" enctype="multipart/form-data"
+            action="{% url 'pdf_merger:multiple_file_upload' %}">
+            {% csrf_token %}
+            <div id="drag-drop-area" class="drag-drop-area">
+                <p>ここにファイルをドラッグ＆ドロップするか、クリックして選択</p>
+                <input id="file-input" type="file" name="files" multiple hidden>
+            </div>
+            <ul id="file-list" class="file-list"></ul>
+            <button type="submit">PDFを結合する</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const dragDropArea = document.getElementById('drag-drop-area');
+    const fileInput = document.getElementById('file-input');
+    const fileList = document.getElementById('file-list');
+
+    // ハンドラーを追加
+    dragDropArea.addEventListener('click', () => fileInput.click());
+    dragDropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dragDropArea.classList.add('dragover');
+    });
+    dragDropArea.addEventListener('dragleave', () => {
+        dragDropArea.classList.remove('dragover');
+    });
+    dragDropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragDropArea.classList.remove('dragover');
+        fileInput.files = e.dataTransfer.files;
+        updateFileList();
+    });
+    fileInput.addEventListener('change', updateFileList);
+
+    // ファイルリストを更新
+    function updateFileList() {
+        fileList.innerHTML = '';
+        Array.from(fileInput.files).forEach((file) => {
+            const li = document.createElement('li');
+            li.textContent = file.name;
+            fileList.appendChild(li);
+        });
+    }
+</script>
+{% endblock %}

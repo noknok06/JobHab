@@ -1,0 +1,20 @@
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead class="table-light">
+            <tr>
+                {% block table_headers %}
+                <!-- ヘッダー部分は子テンプレートで定義 -->
+                {% endblock %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% block table_rows %}
+                <!-- 行データは子テンプレートで定義 -->
+                {% endblock %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

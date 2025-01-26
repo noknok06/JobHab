@@ -1,0 +1,44 @@
+{% comment %} post_table {% endcomment %}
+
+<div class="table-responsive">
+    {% if posts %}
+    <table class="table table-hover align-middle">
+        <thead class="bg-light text-center">
+            <tr>
+                <th>タイトル</th>
+                <th>会社</th>
+                <th>プロジェクト</th>
+                <th>契約開始日</th>
+                <th>契約終了日</th>
+                <th>金額</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in posts %}
+            <tr>
+                <td>
+                    <a href="{% url 'order:post_detail' post.pk %}" class="text-decoration-none text-primary fw-bold">
+                        {{ post.title }}
+                    </a>
+                </td>
+                <td>{{ post.company.name }}</td>
+                <td>{{ post.project.name }}</td>
+                <td>{{ post.contract_start_date|date:"Y-m-j" }}</td>
+                <td>{{ post.contract_end_date|date:"Y-m-j" }}</td>
+                <td class="text-end">{{ post.amount|floatformat:0 }} 円</td>
+                <td>
+                    <a href="{% url 'order:post_detail' post.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-secondary text-center" role="alert">
+        {{ empty_message }}
+    </div>
+    {% endif %}
+</div>
