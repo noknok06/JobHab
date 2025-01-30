@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'project_management',
     'pdf_merger',
     'logger',
-    'login_manager',
     'company',
     'ckeditor',
     'note',
