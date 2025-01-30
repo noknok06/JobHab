@@ -136,7 +136,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # 静的ファイルの保存場所（例: 'staticfiles'ディレクトリに保存される場合）
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = "/home/hondy/staticfiles"
 CKEDITOR_UPLOAD_PATH = "uploads/"
 
 # Default primary key field type
